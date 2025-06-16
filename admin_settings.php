@@ -13,34 +13,69 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 $message = ''; // Initialize message variable
-$semester_weeks = 15; // Default value
+$semester_weeks = 15; // Default value for semester weeks
+$semester_start_date = ''; // Initialize semester start date
+
+// --- Fetch current setting values on page load ---
+try {
+    // Fetch semester_weeks
+    $stmt_weeks = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_name = 'semester_weeks' LIMIT 1");
+    $stmt_weeks->execute();
+    $current_weeks = $stmt_weeks->fetchColumn();
+    if ($current_weeks !== false) {
+        $semester_weeks = (int)$current_weeks;
+    } else {
+        // If 'semester_weeks' setting doesn't exist, insert default
+        $pdo->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('semester_weeks', '15')")
+            ->execute();
+        $message = '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">Default semester weeks set to 15.</div>';
+        $semester_weeks = 15;
+    }
+
+    // Fetch semester_start_date
+    $stmt_date = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_name = 'semester_start_date' LIMIT 1");
+    $stmt_date->execute();
+    $current_date = $stmt_date->fetchColumn();
+    if ($current_date !== false) {
+        $semester_start_date = htmlspecialchars($current_date);
+    } else {
+        // If 'semester_start_date' setting doesn't exist, insert default (e.g., today's date)
+        $pdo->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('semester_start_date', CURDATE())")
+            ->execute();
+        $message .= '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">Default semester start date set to today.</div>';
+        $semester_start_date = date('Y-m-d'); // Set to today's date
+    }
+
+} catch (PDOException $e) {
+    $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Error fetching settings: ' . $e->getMessage() . '</div>';
+}
+
 
 // --- Handle Form Submission (Update Settings) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_settings') {
     $new_semester_weeks = filter_input(INPUT_POST, 'semester_weeks', FILTER_VALIDATE_INT);
+    $new_semester_start_date = filter_input(INPUT_POST, 'semester_start_date', FILTER_SANITIZE_STRING);
 
-    if ($new_semester_weeks === false || $new_semester_weeks < 1 || $new_semester_weeks > 52) { // Assuming max 52 weeks for a semester
+    if ($new_semester_weeks === false || $new_semester_weeks < 1 || $new_semester_weeks > 52) {
         $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Invalid number of semester weeks. Please enter a positive integer.</div>';
-    } else {
+    } elseif (!preg_match("/^\d{4}-\d{2}-\d{2}$/", $new_semester_start_date)) {
+         $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Invalid semester start date format. Please use YYYY-MM-DD.</div>';
+    }
+    else {
         try {
-            // Check if the setting already exists (it should, from initial INSERT)
-            $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM settings WHERE setting_name = 'semester_weeks'");
-            $stmt_check->execute();
-            $exists = $stmt_check->fetchColumn();
+            // Update semester_weeks setting
+            $stmt_update_weeks = $pdo->prepare("UPDATE settings SET setting_value = :setting_value WHERE setting_name = 'semester_weeks'");
+            $stmt_update_weeks->execute([':setting_value' => $new_semester_weeks]);
 
-            if ($exists) {
-                // Update the existing setting
-                $stmt = $pdo->prepare("UPDATE settings SET setting_value = :setting_value WHERE setting_name = 'semester_weeks'");
-            } else {
-                // Insert if for some reason it doesn't exist (shouldn't happen if initial insert ran)
-                $stmt = $pdo->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('semester_weeks', :setting_value)");
-            }
-            $stmt->execute([':setting_value' => $new_semester_weeks]);
+            // Update semester_start_date setting
+            $stmt_update_date = $pdo->prepare("UPDATE settings SET setting_value = :setting_value WHERE setting_name = 'semester_start_date'");
+            $stmt_update_date->execute([':setting_value' => $new_semester_start_date]);
 
-            $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">Semester weeks updated successfully to ' . htmlspecialchars($new_semester_weeks) . '.</div>';
+            $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">Settings updated successfully. Semester weeks: ' . htmlspecialchars($new_semester_weeks) . ', Start Date: ' . htmlspecialchars($new_semester_start_date) . '.</div>';
 
-            // Update the local variable with the new value
+            // Update local variables with the new values
             $semester_weeks = $new_semester_weeks;
+            $semester_start_date = $new_semester_start_date;
 
         } catch (PDOException $e) {
             $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Database error updating settings: ' . $e->getMessage() . '</div>';
@@ -49,25 +84,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     // Redirect to prevent form resubmission and show clean URL
     header('Location: admin_settings.php?message=' . urlencode(strip_tags($message)));
     exit();
-}
-
-// --- Fetch current setting value on page load ---
-try {
-    $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_name = 'semester_weeks' LIMIT 1");
-    $stmt->execute();
-    $current_setting = $stmt->fetchColumn();
-
-    if ($current_setting !== false) {
-        $semester_weeks = (int)$current_setting; // Cast to integer
-    } else {
-        // If the setting doesn't exist (e.g., initial setup issue), insert default
-        $stmt_insert_default = $pdo->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('semester_weeks', '15')");
-        $stmt_insert_default->execute();
-        $message = '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">Default semester weeks set to 15. Please update if needed.</div>';
-        $semester_weeks = 15; // Set to default after inserting
-    }
-} catch (PDOException $e) {
-    $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Error fetching settings: ' . $e->getMessage() . '</div>';
 }
 
 // Display messages coming from redirection after POST
@@ -108,7 +124,8 @@ if (isset($_GET['message'])) {
         .btn-primary {
             @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
         }
-        input[type="number"] {
+        input[type="number"],
+        input[type="date"] { /* Added date input type */
             @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
         }
         label {
@@ -146,6 +163,14 @@ if (isset($_GET['message'])) {
                            value="<?php echo htmlspecialchars($semester_weeks); ?>" required
                            class="mt-1">
                     <p class="mt-2 text-sm text-gray-500">This value will be used for calculating total lectures and final attendance reports.</p>
+                </div>
+
+                <div>
+                    <label for="semester_start_date">Semester Start Date:</label>
+                    <input type="date" id="semester_start_date" name="semester_start_date"
+                           value="<?php echo htmlspecialchars($semester_start_date); ?>" required
+                           class="mt-1">
+                    <p class="mt-2 text-sm text-gray-500">This date determines Week 1 of the semester for attendance calculation.</p>
                 </div>
 
                 <div>
