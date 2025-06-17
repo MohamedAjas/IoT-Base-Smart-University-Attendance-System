@@ -15,35 +15,50 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 $message = ''; // Initialize message variable
 $semester_weeks = 15; // Default value for semester weeks
 $semester_start_date = ''; // Initialize semester start date
+$last_updated_by = 'N/A'; // Initialize last updated by
+$last_updated_at = 'N/A'; // Initialize last updated at
+
+// Get current admin's email for logging purposes
+$admin_email = $_SESSION['email'] ?? 'unknown_admin@example.com';
 
 // --- Fetch current setting values on page load ---
 try {
     // Fetch semester_weeks
-    $stmt_weeks = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_name = 'semester_weeks' LIMIT 1");
+    $stmt_weeks = $pdo->prepare("SELECT setting_value, last_updated_by, last_updated_at FROM settings WHERE setting_name = 'semester_weeks' LIMIT 1");
     $stmt_weeks->execute();
-    $current_weeks = $stmt_weeks->fetchColumn();
-    if ($current_weeks !== false) {
-        $semester_weeks = (int)$current_weeks;
+    $current_weeks_data = $stmt_weeks->fetch(PDO::FETCH_ASSOC);
+
+    if ($current_weeks_data) {
+        $semester_weeks = (int)$current_weeks_data['setting_value'];
+        // We can pick either record's updated_by/at, let's use semester_weeks as the primary setting for display
+        $last_updated_by = htmlspecialchars($current_weeks_data['last_updated_by'] ?? 'N/A');
+        $last_updated_at = $current_weeks_data['last_updated_at'] ? htmlspecialchars(date('Y-m-d H:i:s', strtotime($current_weeks_data['last_updated_at']))) : 'N/A';
     } else {
         // If 'semester_weeks' setting doesn't exist, insert default
-        $pdo->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('semester_weeks', '15')")
-            ->execute();
+        $pdo->prepare("INSERT INTO settings (setting_name, setting_value, last_updated_by, last_updated_at) VALUES ('semester_weeks', '15', :admin_email, NOW())")
+            ->execute([':admin_email' => $admin_email]);
         $message = '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">Default semester weeks set to 15.</div>';
         $semester_weeks = 15;
+        $last_updated_by = htmlspecialchars($admin_email);
+        $last_updated_at = htmlspecialchars(date('Y-m-d H:i:s'));
     }
 
     // Fetch semester_start_date
-    $stmt_date = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_name = 'semester_start_date' LIMIT 1");
+    $stmt_date = $pdo->prepare("SELECT setting_value, last_updated_by, last_updated_at FROM settings WHERE setting_name = 'semester_start_date' LIMIT 1");
     $stmt_date->execute();
-    $current_date = $stmt_date->fetchColumn();
-    if ($current_date !== false) {
-        $semester_start_date = htmlspecialchars($current_date);
+    $current_date_data = $stmt_date->fetch(PDO::FETCH_ASSOC);
+
+    if ($current_date_data) {
+        $semester_start_date = htmlspecialchars($current_date_data['setting_value']);
+        // If semester_start_date's last updated info is newer or more relevant, use it.
+        // For simplicity, we're showing the update info for semester_weeks as the general setting update.
+        // If you need per-setting update info, you'd display it next to each input.
     } else {
         // If 'semester_start_date' setting doesn't exist, insert default (e.g., today's date)
-        $pdo->prepare("INSERT INTO settings (setting_name, setting_value) VALUES ('semester_start_date', CURDATE())")
-            ->execute();
+        $pdo->prepare("INSERT INTO settings (setting_name, setting_value, last_updated_by, last_updated_at) VALUES ('semester_start_date', CURDATE(), :admin_email, NOW())")
+            ->execute([':admin_email' => $admin_email]);
         $message .= '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">Default semester start date set to today.</div>';
-        $semester_start_date = date('Y-m-d'); // Set to today's date
+        $semester_start_date = date('Y-m-d');
     }
 
 } catch (PDOException $e) {
@@ -64,18 +79,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     else {
         try {
             // Update semester_weeks setting
-            $stmt_update_weeks = $pdo->prepare("UPDATE settings SET setting_value = :setting_value WHERE setting_name = 'semester_weeks'");
-            $stmt_update_weeks->execute([':setting_value' => $new_semester_weeks]);
+            $stmt_update_weeks = $pdo->prepare("UPDATE settings SET setting_value = :setting_value, last_updated_by = :last_updated_by, last_updated_at = NOW() WHERE setting_name = 'semester_weeks'");
+            $stmt_update_weeks->execute([
+                ':setting_value' => $new_semester_weeks,
+                ':last_updated_by' => $admin_email
+            ]);
 
             // Update semester_start_date setting
-            $stmt_update_date = $pdo->prepare("UPDATE settings SET setting_value = :setting_value WHERE setting_name = 'semester_start_date'");
-            $stmt_update_date->execute([':setting_value' => $new_semester_start_date]);
+            $stmt_update_date = $pdo->prepare("UPDATE settings SET setting_value = :setting_value, last_updated_by = :last_updated_by, last_updated_at = NOW() WHERE setting_name = 'semester_start_date'");
+            $stmt_update_date->execute([
+                ':setting_value' => $new_semester_start_date,
+                ':last_updated_by' => $admin_email
+            ]);
 
             $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">Settings updated successfully. Semester weeks: ' . htmlspecialchars($new_semester_weeks) . ', Start Date: ' . htmlspecialchars($new_semester_start_date) . '.</div>';
 
-            // Update local variables with the new values
+            // Update local variables with the new values for immediate display
             $semester_weeks = $new_semester_weeks;
             $semester_start_date = $new_semester_start_date;
+            $last_updated_by = htmlspecialchars($admin_email);
+            $last_updated_at = htmlspecialchars(date('Y-m-d H:i:s')); // Current timestamp
 
         } catch (PDOException $e) {
             $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Database error updating settings: ' . $e->getMessage() . '</div>';
@@ -125,7 +148,7 @@ if (isset($_GET['message'])) {
             @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
         }
         input[type="number"],
-        input[type="date"] { /* Added date input type */
+        input[type="date"] {
             @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
         }
         label {
@@ -177,6 +200,12 @@ if (isset($_GET['message'])) {
                     <button type="submit" class="btn-primary">Update Settings</button>
                 </div>
             </form>
+        </div>
+
+        <div class="card">
+            <h3 class="text-xl font-semibold text-gray-800 mb-4">Last Update Information</h3>
+            <p class="text-gray-700">Last updated by: <span class="font-medium"><?php echo $last_updated_by; ?></span></p>
+            <p class="text-gray-700">Last updated at: <span class="font-medium"><?php echo $last_updated_at; ?></span></p>
         </div>
     </div>
 </body>

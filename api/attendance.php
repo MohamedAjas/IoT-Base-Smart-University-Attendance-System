@@ -1,7 +1,7 @@
 <?php
 // Disable error reporting in production for security, but useful for debugging
-// ini_set('display_errors', 0);
-// error_reporting(E_ALL);
+ini_set('display_errors', 1); // <--- UNCOMMENTED for debugging
+error_reporting(E_ALL);     // <--- UNCOMMENTED for debugging
 
 // Set content type to application/json for API response
 header('Content-Type: application/json');
@@ -60,19 +60,30 @@ try {
     $semester_start_date_str = $stmt_settings->fetchColumn();
 
     if (!$semester_start_date_str) {
-        sendJsonResponse('error', 'Semester start date not configured in system settings.');
+        sendJsonResponse('error', 'Semester start date not configured in system settings. Please set it in admin panel.');
     }
     $semester_start_date = new DateTime($semester_start_date_str);
     $scan_datetime = new DateTime($timestamp_str);
 
     // Calculate semester week
     // This calculates the difference in weeks from the semester start date to the scan date
-    $interval = $semester_start_date->diff($scan_datetime);
-    // Add 1 because week 0 is the first week (if scan is on same week as start_date)
-    $semester_week_number = floor($interval->days / 7) + 1;
-    // Ensure semester_week_number is within reasonable bounds, e.g., 1 to 15-20
+    // If the scan date is before the semester start date, interval will be negative.
+    // For simplicity, we are considering days. Difference in seconds might be more precise for "same week".
+    // $interval->days gives the absolute difference in days
+    $diff_days = $scan_datetime->diff($semester_start_date)->days;
+
+    // Check if scan date is before semester start date
+    if ($scan_datetime < $semester_start_date) {
+        sendJsonResponse('error', 'Attendance scan date (' . $scan_date . ') is before the configured Semester Start Date (' . $semester_start_date_str . ').');
+    }
+
+    $semester_week_number = floor($diff_days / 7) + 1;
+
+    // Ensure semester_week_number is within reasonable bounds, e.g., 1 to 20
+    // The max value (20) should ideally match or be slightly higher than semester_weeks from settings
+    // For now, let's keep 20 as a hardcoded sanity check.
     if ($semester_week_number < 1 || $semester_week_number > 20) { // Adjust max week as needed
-         sendJsonResponse('error', 'Attendance scan date outside expected semester weeks range. (Week ' . $semester_week_number . ')');
+         sendJsonResponse('error', 'Attendance scan date outside expected semester weeks range. Calculated Week: ' . $semester_week_number . '. Please check semester settings or scan date.');
     }
 
 
@@ -84,14 +95,15 @@ try {
         SELECT subject_id
         FROM classes
         WHERE day_of_week = :day_of_week
-          AND start_time <= :scan_time
-          AND end_time >= :scan_time
+          AND start_time <= :scan_time_start  -- Changed placeholder
+          AND end_time >= :scan_time_end      -- Changed placeholder
           AND semester_week = :semester_week
         LIMIT 1
     ");
     $stmt_class->execute([
         ':day_of_week' => $day_of_week,
-        ':scan_time' => $scan_time,
+        ':scan_time_start' => $scan_time, // Bound to new placeholder
+        ':scan_time_end' => $scan_time,   // Bound to new placeholder
         ':semester_week' => $semester_week_number
     ]);
     $class_info = $stmt_class->fetch(PDO::FETCH_ASSOC);
@@ -123,14 +135,14 @@ try {
 
     sendJsonResponse('success', 'Attendance recorded successfully.', ['student_id' => $student_id, 'subject_id' => $subject_id, 'date' => $scan_date, 'time_in' => $scan_time]);
 
-} catch (PDOException $e) {
-    // Log the detailed error for debugging, but send a generic message to the client
-    error_log("API Attendance Error: " . $e->getMessage());
-    sendJsonResponse('error', 'A database error occurred while recording attendance.');
-} catch (Exception $e) {
-    // Catch general exceptions (e.g., from DateTime)
-    error_log("API General Error: " . $e->getMessage());
-    sendJsonResponse('error', 'An unexpected error occurred.');
-}
+    } catch (PDOException $e) {
+        // Log the detailed error for debugging, but send a generic message to the client
+        error_log("API Attendance Error: " . $e->getMessage());
+        sendJsonResponse('error', 'A database error occurred while recording attendance. Details: ' . $e->getMessage());
+    } catch (Exception $e) {
+        // Catch general exceptions (e.g., from DateTime)
+        error_log("API General Error: " . $e->getMessage());
+        sendJsonResponse('error', 'An unexpected error occurred. Details: ' . $e->getMessage());
+    }
 
 ?>
