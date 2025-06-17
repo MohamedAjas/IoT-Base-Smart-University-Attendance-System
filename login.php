@@ -75,73 +75,221 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Inter Font -->
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
     <style>
+        /* Base styles */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5; /* Light grey background */
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            background: linear-gradient(135deg, #e0f2f7, #c1dff0); /* Very subtle, calming blue gradient */
+            background-size: 400% 400%;
+            animation: gradientBackgroundAnimation 20s ease infinite alternate; /* Slower, smoother animation */
+            overflow-y: auto; /* Ensure scrolling is always possible */
+            color: #333; /* Default dark text color */
         }
+
+        @keyframes gradientBackgroundAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Main content wrapper for two-column layout */
+        .login-wrapper {
+            display: flex;
+            flex-direction: column; /* Stack vertically on small screens */
+            align-items: center;
+            max-width: 1080px; /* Increased max width for more expansive feel */
+            width: 100%;
+            padding: 2rem; /* Consistent padding for overall wrapper */
+            box-sizing: border-box;
+        }
+
+        @media (min-width: 768px) { /* Medium screens and up (md breakpoint) */
+            .login-wrapper {
+                flex-direction: row; /* Two columns on larger screens */
+                justify-content: center; /* Center content horizontally */
+                gap: 4rem; /* Gap between left and right sections */
+                padding: 3rem;
+            }
+        }
+
+        /* Left section: Branding/Marketing text */
+        .left-section {
+            text-align: center;
+            margin-bottom: 3rem; /* Space below on small screens */
+            width: 100%;
+            max-width: 500px; /* Wider limit */
+            animation: fadeInRight 1s ease-out forwards; /* Fade in from right */
+            opacity: 0; /* Start hidden for animation */
+            transform: translateX(-20px); /* Start slightly off-screen */
+        }
+
+        @media (min-width: 768px) {
+            .left-section {
+                text-align: left;
+                margin-bottom: 0;
+                transform: translateX(0); /* Reset transform for animation direction */
+            }
+        }
+
+        @keyframes fadeInRight {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .university-logo {
+            font-size: 4.5rem; /* Even larger logo text */
+            font-weight: 900; /* Super bold */
+            /* Text gradient for dynamic branding - using a calming blue-green */
+            background: linear-gradient(45deg, #007bff, #00c6ff, #00e0b2);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+            margin-bottom: 1.2rem;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Subtle text shadow */
+        }
+
+        .tagline-text {
+            font-size: 1.75rem; /* Larger tagline */
+            color: #4a5568; /* Darker gray for strong readability */
+            line-height: 1.4;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05); /* Very subtle text shadow */
+        }
+
+        /* Right section: Login form container - ENHANCED FOR CLARITY */
         .form-container {
             width: 100%;
-            max-width: 500px;
-            background-color: #ffffff;
-            border-radius: 0.75rem; /* rounded-xl */
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
-            padding: 2.5rem; /* p-10 */
+            max-width: 450px;
+            background-color: #ffffff; /* Solid white background for maximum contrast */
+            border-radius: 1rem; /* Consistent rounding */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.08); /* Clearer, softer shadow */
+            padding: 2.5rem; /* Standard generous padding */
+            box-sizing: border-box;
+            animation: fadeInLeft 1s ease-out forwards;
+            opacity: 0;
+            transform: translateX(20px);
+            animation-delay: 0.2s;
+            position: relative;
+            z-index: 10; /* Ensure it's above background elements */
         }
-        input[type="text"],
-        input[type="email"],
-        input[type="password"] {
-            @apply block w-full px-4 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
+
+        @media (min-width: 768px) {
+            .form-container {
+                padding: 3rem; /* Slightly more padding on larger screens */
+                transform: translateX(0);
+            }
         }
-        button {
-            @apply w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+
+        @keyframes fadeInLeft {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Input field styling - ENHANCED FOR USABILITY */
+        .input-field {
+            @apply block w-full px-5 py-3.5 border border-gray-300 rounded-md shadow-sm /* Standard border and shadow */
+                   text-gray-800 placeholder-gray-500
+                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 /* Clear blue focus */
+                   transition duration-200 ease-in-out;
+        }
+        
+        .input-field::placeholder {
+            opacity: 0.8;
+            color: #888; /* Slightly darker placeholder for better visibility */
+        }
+
+        /* Button styling - ENHANCED FOR IMPACT & FEEDBACK */
+        .submit-button {
+            @apply w-full flex justify-center py-3.5 px-6 border-transparent rounded-md shadow-md /* Standard rounded-md */
+                   text-lg font-bold text-white uppercase tracking-wide
+                   bg-blue-600 hover:bg-blue-700 /* Solid blue for primary action, simple hover */
+                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                   transition duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg; /* Clear scale and shadow on hover */
+        }
+
+        /* Register link button - ENHANCED FOR DISTINCTNESS */
+        .register-button {
+            @apply w-full flex justify-center py-3 px-6 border border-transparent rounded-md shadow-sm /* Standard rounded-md */
+                   text-lg font-semibold text-white
+                   bg-green-500 hover:bg-green-600 /* Distinct green for secondary action */
+                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400
+                   transition duration-200 ease-in-out transform hover:scale-105 hover:shadow-md;
+        }
+
+        /* Divider style - CLEANER */
+        .divider {
+            border-bottom: 1px solid #e2e8f0; /* Tailwind gray-200 for a very light line */
+            margin: 2rem 0; /* Consistent spacing */
+        }
+
+        /* Message alert styling - CLEAR & FRIENDLY */
+        .message-alert {
+            margin-bottom: 2rem; /* Clear space before form */
+            padding: 1rem 1.25rem;
+            border-radius: 0.5rem; /* Standard rounding for alerts */
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 500;
+            line-height: 1.4;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+
+        .message-alert.error {
+            background-color: #ffe7e6; /* Very light red */
+            border: 1px solid #ff4d4d; /* Clear red border */
+            color: #cc0000; /* Dark red text */
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="form-container">
-        <div class="text-center">
-            <h2 class="text-3xl font-extrabold text-gray-900">
-                Sign in to University Attendance
+<body>
+    <div class="login-wrapper">
+        <!-- Left Section: Branding and Tagline -->
+        <div class="left-section">
+            <h1 class="university-logo">University Attendance</h1>
+            <h2 class="tagline-text">
+                Seamlessly track, manage, and verify student attendance.<br>Empowering academic success through efficiency.
             </h2>
-            <p class="mt-2 text-sm text-gray-600">
-                Or
-                <a href="register.php" class="font-medium text-indigo-600 hover:text-indigo-500">
-                    register for a new account
-                </a>
-            </p>
         </div>
 
-        <?php echo $message; // Display login message ?>
+        <!-- Right Section: Login Form -->
+        <div class="form-container">
+            <?php 
+            // Display login message
+            if (!empty($message)) {
+                echo '<div class="message-alert error">' . $message . '</div>';
+            }
+            ?>
 
-        <form class="mt-8 space-y-6" action="login.php" method="POST">
-            <div>
-                <label for="email_or_reg_no" class="block text-sm font-medium text-gray-700">Email address or Registration Number</label>
-                <div class="mt-1">
+            <form class="space-y-5" action="login.php" method="POST">
+                <div>
                     <input id="email_or_reg_no" name="email_or_reg_no" type="text" autocomplete="email" required
-                           class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                           placeholder="you@university.ac.lk or IT12345">
+                           class="input-field"
+                           placeholder="Email address or Registration Number">
                 </div>
-            </div>
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
-                <div class="mt-1">
+                <div>
                     <input id="password" name="password" type="password" autocomplete="current-password" required
-                           class="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                           placeholder="Enter your password">
+                           class="input-field"
+                           placeholder="Password">
                 </div>
-            </div>
 
-            <div>
-                <button type="submit"
-                        class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    Sign in
-                </button>
+                <div class="pt-3">
+                    <button type="submit" class="submit-button">
+                        Log In
+                    </button>
+                </div>
+            </form>
+
+            <div class="divider"></div>
+
+            <div class="text-center pt-2">
+                <a href="register.php" class="register-button">
+                    Create New Account
+                </a>
             </div>
-        </form>
+        </div>
     </div>
 </body>
 </html>
