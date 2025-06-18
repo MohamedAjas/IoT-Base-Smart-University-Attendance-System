@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Invalid email, registration number, or password.</div>';
             }
-        } catch (PDOException $e) {
+        } catch (PDOExceptionD $e) {
             $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Login failed due to a database error: ' . $e->getMessage() . '</div>';
         }
     }
@@ -74,222 +74,346 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <style>
-        /* Base styles */
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #e0f2f7, #c1dff0); /* Very subtle, calming blue gradient */
-            background-size: 400% 400%;
-            animation: gradientBackgroundAnimation 20s ease infinite alternate; /* Slower, smoother animation */
-            overflow-y: auto; /* Ensure scrolling is always possible */
-            color: #333; /* Default dark text color */
-        }
-
-        @keyframes gradientBackgroundAnimation {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* Main content wrapper for two-column layout */
-        .login-wrapper {
-            display: flex;
-            flex-direction: column; /* Stack vertically on small screens */
-            align-items: center;
-            max-width: 1080px; /* Increased max width for more expansive feel */
-            width: 100%;
-            padding: 2rem; /* Consistent padding for overall wrapper */
-            box-sizing: border-box;
-        }
-
-        @media (min-width: 768px) { /* Medium screens and up (md breakpoint) */
-            .login-wrapper {
-                flex-direction: row; /* Two columns on larger screens */
-                justify-content: center; /* Center content horizontally */
-                gap: 4rem; /* Gap between left and right sections */
-                padding: 3rem;
-            }
-        }
-
-        /* Left section: Branding/Marketing text */
-        .left-section {
-            text-align: center;
-            margin-bottom: 3rem; /* Space below on small screens */
-            width: 100%;
-            max-width: 500px; /* Wider limit */
-            animation: fadeInRight 1s ease-out forwards; /* Fade in from right */
-            opacity: 0; /* Start hidden for animation */
-            transform: translateX(-20px); /* Start slightly off-screen */
-        }
-
-        @media (min-width: 768px) {
-            .left-section {
-                text-align: left;
-                margin-bottom: 0;
-                transform: translateX(0); /* Reset transform for animation direction */
-            }
-        }
-
-        @keyframes fadeInRight {
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .university-logo {
-            font-size: 4.5rem; /* Even larger logo text */
-            font-weight: 900; /* Super bold */
-            /* Text gradient for dynamic branding - using a calming blue-green */
-            background: linear-gradient(45deg, #007bff, #00c6ff, #00e0b2);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            line-height: 1.1;
-            margin-bottom: 1.2rem;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1); /* Subtle text shadow */
-        }
-
-        .tagline-text {
-            font-size: 1.75rem; /* Larger tagline */
-            color: #4a5568; /* Darker gray for strong readability */
-            line-height: 1.4;
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05); /* Very subtle text shadow */
-        }
-
-        /* Right section: Login form container - ENHANCED FOR CLARITY */
-        .form-container {
-            width: 100%;
-            max-width: 450px;
-            background-color: #ffffff; /* Solid white background for maximum contrast */
-            border-radius: 1rem; /* Consistent rounding */
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.08); /* Clearer, softer shadow */
-            padding: 2.5rem; /* Standard generous padding */
-            box-sizing: border-box;
-            animation: fadeInLeft 1s ease-out forwards;
-            opacity: 0;
-            transform: translateX(20px);
-            animation-delay: 0.2s;
-            position: relative;
-            z-index: 10; /* Ensure it's above background elements */
-        }
-
-        @media (min-width: 768px) {
-            .form-container {
-                padding: 3rem; /* Slightly more padding on larger screens */
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes fadeInLeft {
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        /* Input field styling - ENHANCED FOR USABILITY */
-        .input-field {
-            @apply block w-full px-5 py-3.5 border border-gray-300 rounded-md shadow-sm /* Standard border and shadow */
-                   text-gray-800 placeholder-gray-500
-                   focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 /* Clear blue focus */
-                   transition duration-200 ease-in-out;
-        }
-        
-        .input-field::placeholder {
-            opacity: 0.8;
-            color: #888; /* Slightly darker placeholder for better visibility */
-        }
-
-        /* Button styling - ENHANCED FOR IMPACT & FEEDBACK */
-        .submit-button {
-            @apply w-full flex justify-center py-3.5 px-6 border-transparent rounded-md shadow-md /* Standard rounded-md */
-                   text-lg font-bold text-white uppercase tracking-wide
-                   bg-blue-600 hover:bg-blue-700 /* Solid blue for primary action, simple hover */
-                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
-                   transition duration-200 ease-in-out transform hover:scale-105 hover:shadow-lg; /* Clear scale and shadow on hover */
-        }
-
-        /* Register link button - ENHANCED FOR DISTINCTNESS */
-        .register-button {
-            @apply w-full flex justify-center py-3 px-6 border border-transparent rounded-md shadow-sm /* Standard rounded-md */
-                   text-lg font-semibold text-white
-                   bg-green-500 hover:bg-green-600 /* Distinct green for secondary action */
-                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400
-                   transition duration-200 ease-in-out transform hover:scale-105 hover:shadow-md;
-        }
-
-        /* Divider style - CLEANER */
-        .divider {
-            border-bottom: 1px solid #e2e8f0; /* Tailwind gray-200 for a very light line */
-            margin: 2rem 0; /* Consistent spacing */
-        }
-
-        /* Message alert styling - CLEAR & FRIENDLY */
-        .message-alert {
-            margin-bottom: 2rem; /* Clear space before form */
-            padding: 1rem 1.25rem;
-            border-radius: 0.5rem; /* Standard rounding for alerts */
-            text-align: center;
-            font-size: 0.95rem;
-            font-weight: 500;
-            line-height: 1.4;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
-        }
-
-        .message-alert.error {
-            background-color: #ffe7e6; /* Very light red */
-            border: 1px solid #ff4d4d; /* Clear red border */
-            color: #cc0000; /* Dark red text */
-        }
-    </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
-<body>
-    <div class="login-wrapper">
-        <!-- Left Section: Branding and Tagline -->
-        <div class="left-section">
-            <h1 class="university-logo">University Attendance</h1>
-            <h2 class="tagline-text">
-                Seamlessly track, manage, and verify student attendance.<br>Empowering academic success through efficiency.
-            </h2>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="main-container bg-white rounded-lg shadow-xl flex flex-col md:flex-row overflow-hidden w-full">
+        <!-- Left Section: Welcome & Branding -->
+        <div class="left-panel p-4 md:p-5 flex flex-col justify-between items-center text-center md:text-left">
+            <div class="mb-4 md:mb-5">
+                <!-- University Attendance text in image has line breaks -->
+                <h1 class="university-logo text-white font-extrabold mb-2">IoT Base Smart<br>University<br>Attendance System</h1>
+                <p class="tagline-text text-white text-sm md:text-base leading-relaxed">
+                    <br><br><br><br>Sign in to continue access
+                </p>
+            </div>
+            <div class="w-full text-center md:text-left mt-auto">
+                <!-- Company URL at the bottom left -->
+                <span class="text-xs text-white text-opacity-70">www.seu.ac.lk</span>
+            </div>
         </div>
 
         <!-- Right Section: Login Form -->
-        <div class="form-container">
+        <div class="right-panel p-4 md:p-5 flex flex-col justify-center w-full">
+            <h2 class="login-title text-xl md:text-2xl font-extrabold text-gray-800 mb-3 text-center">Login</h2>
+
             <?php 
             // Display login message
             if (!empty($message)) {
-                echo '<div class="message-alert error">' . $message . '</div>';
+                echo '<div class="message-alert error mb-3">' . $message . '</div>';
             }
             ?>
 
-            <form class="space-y-5" action="login.php" method="POST">
-                <div>
-                    <input id="email_or_reg_no" name="email_or_reg_no" type="text" autocomplete="email" required
-                           class="input-field"
-                           placeholder="Email address or Registration Number">
+            <form class="space-y-3" action="login.php" method="POST">
+                <div class="relative">
+                    <i class="fa-solid fa-user input-icon"></i>
+                    <input id="email_or_reg_no" name="email_or_reg_no" type="text" autocomplete="username" required
+                           class="input-field pl-8"
+                           placeholder="University email">
                 </div>
-                <div>
+                <div class="relative">
+                    <i class="fa-solid fa-lock input-icon"></i>
                     <input id="password" name="password" type="password" autocomplete="current-password" required
-                           class="input-field"
+                           class="input-field pl-8"
                            placeholder="Password">
                 </div>
 
-                <div class="pt-3">
+                <div class="text-right">
+                    <a href="#" class="forgot-password-link text-xs hover:underline font-medium">Forgot password ?</a>
+                </div>
+
+                <div class="pt-2">
                     <button type="submit" class="submit-button">
-                        Log In
+                        LOGIN
                     </button>
                 </div>
             </form>
 
-            <div class="divider"></div>
+            <div class="flex items-center my-4">
+                <div class="flex-grow border-t border-gray-300"></div>
+                <span class="flex-shrink mx-2 text-gray-500 text-xs">Or Sig</span>
+                <div class="flex-grow border-t border-gray-300"></div>
+            </div>
 
-            <div class="text-center pt-2">
-                <a href="register.php" class="register-button">
+            <div class="text-center mt-2 text-xs text-gray-500">
+                <p class="mb-1">Sign Up Using</p>
+                <div class="flex justify-center gap-2">
+                    <!-- Placeholder social buttons -->
+                    <a href="#" class="social-icon bg-blue-600 hover:bg-blue-700"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-icon bg-red-600 hover:bg-red-700"><i class="fab fa-google"></i></a>
+                    <a href="#" class="social-icon bg-black hover:bg-gray-800"><i class="fab fa-apple"></i></a>
+                </div>
+            </div>
+
+            <div class="text-center mt-4"> <!-- Added margin-top to separate from social icons -->
+                <a href="register.php" class="create-account-button">
                     Create New Account
                 </a>
             </div>
         </div>
     </div>
+
+    <style>
+        /* Base styles already provided by Tailwind/Inter */
+
+        /* Custom styles for the new design */
+        body {
+            /* Background image updated to log_back.png in images folder */
+            background-image: url('images/log.png'); 
+            background-size: cover; /* Cover the entire background */
+            background-position: center; /* Center the image */
+            background-repeat: no-repeat; /* Do not repeat the image */
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh; /* Ensure full viewport height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* CRUCIAL FIX: Allow vertical scrolling if content overflows */
+            overflow-y: auto; 
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            padding: 5px; /* Further reduced padding on body to give maximum space */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+
+        .main-container {
+            /* No fixed min-height, let content dictate height */
+            width: 100%; /* Responsive width */
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); /* Slightly reduced shadow */
+            display: flex;
+            flex-direction: column; /* Stack on mobile */
+            overflow: hidden; /* Ensure rounded corners clip content inside */
+            /* IMPORTANT: Adjusted max-width to allow content to fit better on smaller screens */
+            max-width: 550px; /* Significantly reduced max-width for the entire card */
+        }
+
+        @media (min-width: 768px) {
+            .main-container {
+                flex-direction: row; /* Side-by-side on desktop */
+                min-height: 380px; /* Further reduced min-height for desktop layout */
+            }
+        }
+
+        .left-panel {
+            /* Gradient matching the image's left panel */
+            background: linear-gradient(135deg, #8A2BE2, #FF1493); /* BlueViolet to DeepPink */
+            flex: 1;
+            padding: 1rem; /* Reduced padding */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            color: white;
+            position: relative; /* For the subtle circle on the left panel */
+            overflow: hidden;
+            /* No fixed min-height for mobile left panel. */
+        }
+
+        /* Subtle circle on the left panel, as seen in the image */
+        .left-panel::before {
+            content: '';
+            position: absolute;
+            top: -20px; /* Adjusted position */
+            left: -20px; /* Adjusted position */
+            width: 120px; /* Reduced size */
+            height: 120px;
+            background: rgba(255, 255, 255, 0.1); /* White with transparency */
+            border-radius: 50%;
+            filter: blur(15px); /* Soft blur */
+            transform: rotate(45deg); /* Slight rotation */
+            z-index: 0;
+            pointer-events: none;
+        }
+
+
+        @media (min-width: 768px) {
+            .left-panel {
+                flex: 0 0 45%; /* Proportion similar to image */
+                border-top-left-radius: 12px;
+                border-bottom-left-radius: 12px;
+                border-top-right-radius: 0; /* No rounding on right for desktop */
+                min-height: 380px; /* Ensure height matches right panel on desktop */
+            }
+        }
+        @media (max-width: 767px) {
+            .left-panel {
+                border-bottom-left-radius: 0; /* No rounding at bottom left on mobile */
+                border-top-right-radius: 12px; /* Top right rounded on mobile */
+                border-bottom-right-radius: 0; /* No rounding bottom right on mobile */
+            }
+        }
+
+        .university-logo {
+            font-size: 1.8rem; /* Further reduced font size */
+            font-weight: 800;
+            margin-bottom: 0.4rem; /* Further reduced margin */
+            /* Using a gradient for the logo text matching the image's example */
+            background: linear-gradient(45deg, #FFD700, #FF69B4); /* Gold to HotPink, as seen in the image */
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .left-panel .tagline-text {
+            font-size: 0.9rem; /* Further reduced font size */
+            line-height: 1.4;
+            color: white; /* Ensure text is white despite gradient for logo */
+        }
+
+        .right-panel {
+            flex: 1;
+            background-color: #ffffff;
+            padding: 1.25rem; /* Further reduced padding */
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* This centers content vertically within the right panel */
+            text-align: center;
+            /* Allow right panel to take its natural height based on content */
+        }
+        @media (min-width: 768px) {
+            .right-panel {
+                border-top-right-radius: 12px;
+                border-bottom-right-radius: 12px;
+                border-top-left-radius: 0; /* No rounding on left for desktop */
+            }
+        }
+        @media (max-width: 767px) {
+            .right-panel {
+                border-top-left-radius: 0; /* No rounding on top left on mobile */
+                border-bottom-right-radius: 12px; /* Bottom right rounded on mobile */
+                border-bottom-left-radius: 12px; /* Bottom left rounded on mobile */
+            }
+        }
+
+
+        .login-title {
+            font-size: 1.5rem; /* Further reduced font size */
+            font-weight: 800;
+            color: #333;
+            margin-bottom: 1rem; /* Further reduced margin */
+        }
+
+        .input-field {
+            border: none;
+            border-bottom: 1px solid #e0e0e0;
+            padding-left: 2rem; /* Adjusted space for icon */
+            padding-right: 0.5rem;
+            padding-top: 0.4rem; /* Further reduced padding */
+            padding-bottom: 0.4rem;
+            height: auto;
+            font-size: 0.85rem; /* Further reduced font size */
+            outline: none;
+            box-shadow: none;
+            background-color: transparent;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            border-bottom-color: #1877f2;
+            box-shadow: none;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 0.3rem; /* Adjusted icon position */
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 0.8rem; /* Further reduced icon size */
+        }
+
+        .forgot-password-link {
+            color: #4a90e2;
+            font-size: 0.7rem; /* Further reduced font size */
+            font-weight: 500;
+        }
+        .forgot-password-link:hover {
+            text-decoration: underline;
+        }
+
+
+        .submit-button {
+            background: linear-gradient(90deg, #00C6FF, #0072FF, #8A2BE2);
+            border: none;
+            font-size: 0.85rem; /* Further reduced font size */
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.6rem 0.8rem; /* Further reduced padding */
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 114, 255, 0.3); /* Further reduced shadow */
+            transition: all 0.3s ease-in-out;
+            color: white;
+        }
+        .submit-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 114, 255, 0.4);
+            background-position: right center;
+        }
+
+        /* OR divider */
+        .flex.items-center.my-4 {
+            margin-top: 1rem; /* Further reduced margin */
+            margin-bottom: 1rem; /* Further reduced margin */
+        }
+        .flex-grow.border-t {
+            border-color: #e0e0e0;
+        }
+        .flex-shrink.mx-4 {
+            color: #777;
+            font-size: 0.7rem; /* Further reduced font size */
+        }
+
+        /* Social buttons */
+        .social-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px; /* Reduced size */
+            height: 32px;
+            border-radius: 50%;
+            color: white;
+            font-size: 0.9rem; /* Reduced icon size */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Reduced shadow */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .social-icon:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        .create-account-button {
+            background: #f0f2f5;
+            color: #1877f2;
+            padding: 0.5rem 0.8rem; /* Further reduced padding */
+            border-radius: 8px;
+            font-size: 0.8rem; /* Further reduced font size */
+            font-weight: 700;
+            border: 1px solid #d8dbe0;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+            display: inline-block;
+        }
+        .create-account-button:hover {
+            background-color: #e9ebf0;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+        }
+
+        .message-alert {
+            background-color: #fef2f2;
+            border: 1px solid #ef4444;
+            color: #b91c1c;
+            padding: 0.4rem 0.6rem; /* Further reduced padding */
+            margin-bottom: 0.6rem; /* Further reduced margin */
+            border-radius: 0.375rem;
+            font-size: 0.75rem; /* Further reduced font size */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        /* Override specific Tailwind classes if needed for exact match */
+        .text-blue-600 { color: #1877f2 !important; }
+    </style>
 </body>
 </html>
