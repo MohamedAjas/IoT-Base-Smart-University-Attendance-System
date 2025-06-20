@@ -26,7 +26,7 @@ try {
     $stmt_subjects = $pdo->query("SELECT subject_id, subject_code, subject_name FROM subjects ORDER BY subject_name");
     $subjects_list = $stmt_subjects->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Error loading filter options: ' . $e->getMessage() . '</div>';
+    $message = '<div class="alert alert-danger" role="alert">Error loading filter options: ' . $e->getMessage() . '</div>';
 }
 
 // --- Handle Attendance Status Update (POST) ---
@@ -61,9 +61,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         $stmt_increment_medical = $pdo->prepare("UPDATE students SET medical_count = medical_count + 1 WHERE student_id = :student_id");
                         $stmt_increment_medical->execute([':student_id' => $student_id]);
 
-                        $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">Attendance status updated to Medical, and medical count incremented.</div>';
+                        $message = '<div class="alert alert-success" role="alert">Attendance status updated to Medical, and medical count incremented.</div>';
                     } else {
-                        $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Cannot set to Medical: Student has already reached the limit of 2 medical reasons.</div>';
+                        $message = '<div class="alert alert-danger" role="alert">Cannot set to Medical: Student has already reached the limit of 2 medical reasons.</div>';
                     }
                 } elseif ($new_status === 'Absent' && $old_status === 'Medical') {
                     // Changing from Medical to Absent, decrement medical count
@@ -72,23 +72,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
                     $stmt_decrement_medical = $pdo->prepare("UPDATE students SET medical_count = medical_count - 1 WHERE student_id = :student_id");
                     $stmt_decrement_medical->execute([':student_id' => $student_id]);
-                    $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">Attendance status updated to Absent, and medical count decremented.</div>';
+                    $message = '<div class="alert alert-success" role="alert">Attendance status updated to Absent, and medical count decremented.</div>';
                 } else if ($new_status !== $old_status) {
                     // For other valid status changes (e.g., Present to Absent, Absent to Present)
                     $stmt_update_attendance = $pdo->prepare("UPDATE attendance SET status = :new_status WHERE attendance_id = :attendance_id");
                     $stmt_update_attendance->execute([':new_status' => $new_status, ':attendance_id' => $attendance_id]);
-                    $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">Attendance status updated successfully.</div>';
+                    $message = '<div class="alert alert-success" role="alert">Attendance status updated successfully.</div>';
                 } else {
-                    $message = '<div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded relative" role="alert">Status is already ' . htmlspecialchars($new_status) . '. No change made.</div>';
+                    $message = '<div class="alert alert-warning" role="alert">Status is already ' . htmlspecialchars($new_status) . '. No change made.</div>';
                 }
             } else {
-                $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Attendance record not found.</div>';
+                $message = '<div class="alert alert-danger" role="alert">Attendance record not found.</div>';
             }
         } catch (PDOException $e) {
-            $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Error updating attendance: ' . $e->getMessage() . '</div>';
+            $message = '<div class="alert alert-danger" role="alert">Error updating attendance: ' . $e->getMessage() . '</div>';
         }
     } else {
-        $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Invalid update request.</div>';
+        $message = '<div class="alert alert-danger" role="alert">Invalid update request.</div>';
     }
     // Redirect to preserve state after POST and display message
     header('Location: admin_view_attendance.php?message=' . urlencode(strip_tags($message)));
@@ -147,12 +147,12 @@ try {
     $stmt->execute($params);
     $attendance_records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-    $message = '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">Error fetching attendance records: ' . $e->getMessage() . '</div>';
+    $message = '<div class="alert alert-danger" role="alert">Error fetching attendance records: ' . $e->getMessage() . '</div>';
 }
 
 // Display messages coming from redirection after POST
 if (isset($_GET['message'])) {
-    $message = '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">' . htmlspecialchars($_GET['message']) . '</div>';
+    $message = '<div class="alert alert-success" role="alert">' . htmlspecialchars($_GET['message']) . '</div>';
 }
 ?>
 <!DOCTYPE html>
@@ -165,84 +165,55 @@ if (isset($_GET['message'])) {
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Inter Font -->
     <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
-        }
-        .container-wrapper {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-        .header-bar {
-            @apply flex justify-between items-center bg-indigo-800 text-white p-4 rounded-b-lg shadow-md mb-8;
-        }
-        .nav-link {
-            @apply px-4 py-2 text-white hover:bg-indigo-700 rounded-md transition-colors duration-200;
-        }
-        .card {
-            @apply bg-white p-6 rounded-xl shadow-lg;
-        }
-        .table-responsive {
-            overflow-x: auto;
-        }
-        table {
-            @apply w-full text-left border-collapse;
-        }
-        th, td {
-            @apply py-3 px-4 border-b border-gray-200 align-top;
-        }
-        th {
-            @apply bg-gray-50 text-gray-700 text-sm font-semibold uppercase tracking-wider;
-        }
-        tr:nth-child(odd) {
-            background-color: #f9fafb;
-        }
-        .btn-primary {
-            @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
-        }
-        .btn-secondary {
-            @apply inline-flex items-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
-        }
-        .btn-danger {
-            @apply inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500;
-        }
-        input[type="text"],
-        input[type="date"],
-        select {
-            @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
-        }
-        label {
-            @apply block text-sm font-medium text-gray-700;
-        }
-    </style>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
-<body class="bg-gray-100">
+<body>
     <header class="header-bar">
-        <h1 class="text-2xl font-bold">University Attendance Admin Panel</h1>
-        <nav>
-            <ul class="flex space-x-4">
-                <li><a href="admin_dashboard.php" class="nav-link">Dashboard</a></li>
-                <li><a href="admin_manage_students.php" class="nav-link">Manage Students</a></li>
-                <li><a href="admin_manage_subjects.php" class="nav-link">Manage Subjects</a></li>
-                <li><a href="admin_manage_classes.php" class="nav-link">Manage Classes</a></li>
-                <li><a href="admin_view_attendance.php" class="nav-link">View Attendance</a></li>
-                <li><a href="admin_settings.php" class="nav-link">Settings</a></li>
-                <li><a href="logout.php" class="nav-link">Logout</a></li>
-            </ul>
-        </nav>
+        <!-- Top Row: University Logo and Name -->
+        <div class="header-top-row">
+            <div class="header-left">
+                <img src="images/logo.png" alt="University Logo" class="university-logo-header">
+                <h1>University Attendance Admin Panel</h1>
+            </div>
+        </div>
+        
+        <!-- Bottom Row: Navigation and User Info -->
+        <div class="header-bottom-row">
+            <nav class="header-nav">
+                <ul>
+                    <li><a href="admin_dashboard.php" class="nav-link">Dashboard</a></li>
+                    <li><a href="admin_manage_students.php" class="nav-link">Manage Students</a></li>
+                    <li><a href="admin_manage_subjects.php" class="nav-link">Manage Subjects</a></li>
+                    <li><a href="admin_manage_classes.php" class="nav-link">Manage Classes</a></li>
+                    <li><a href="admin_view_attendance.php" class="nav-link current-page">View Attendance</a></li>
+                    <li><a href="admin_settings.php" class="nav-link">Settings</a></li>
+                </ul>
+            </nav>
+
+            <div class="header-right">
+                <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Welcome, <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Admin'); ?></span>
+                <a href="logout.php" class="logout-btn">
+                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                </a>
+            </div>
+        </div>
     </header>
 
     <div class="container-wrapper">
-        <?php echo $message; // Display any messages ?>
+        <?php 
+        // Display any error/success messages
+        if (!empty($message)) {
+            echo $message;
+        }
+        ?>
 
-        <div class="card mb-8">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Filter Attendance Records</h2>
-            <form action="admin_view_attendance.php" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="card card-custom mb-8">
+            <h2 class="card-title text-center mb-4 pb-2 border-bottom-title">Filter Attendance Records</h2>
+            <form action="admin_view_attendance.php" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div>
-                    <label for="filter_student_id">Student:</label>
-                    <select id="filter_student_id" name="filter_student_id">
+                    <label for="filter_student_id" class="form-label">Student:</label>
+                    <select id="filter_student_id" name="filter_student_id" class="form-control-custom">
                         <option value="">All Students</option>
                         <?php foreach ($students_list as $student): ?>
                             <option value="<?php echo htmlspecialchars($student['student_id']); ?>"
@@ -253,8 +224,8 @@ if (isset($_GET['message'])) {
                     </select>
                 </div>
                 <div>
-                    <label for="filter_subject_id">Subject:</label>
-                    <select id="filter_subject_id" name="filter_subject_id">
+                    <label for="filter_subject_id" class="form-label">Subject:</label>
+                    <select id="filter_subject_id" name="filter_subject_id" class="form-control-custom">
                         <option value="">All Subjects</option>
                         <?php foreach ($subjects_list as $subject): ?>
                             <option value="<?php echo htmlspecialchars($subject['subject_id']); ?>"
@@ -265,27 +236,31 @@ if (isset($_GET['message'])) {
                     </select>
                 </div>
                 <div>
-                    <label for="filter_start_date">Start Date:</label>
-                    <input type="date" id="filter_start_date" name="filter_start_date" value="<?php echo htmlspecialchars($filter_start_date); ?>">
+                    <label for="filter_start_date" class="form-label">Start Date:</label>
+                    <input type="date" id="filter_start_date" name="filter_start_date" class="form-control-custom" value="<?php echo htmlspecialchars($filter_start_date); ?>">
                 </div>
                 <div>
-                    <label for="filter_end_date">End Date:</label>
-                    <input type="date" id="filter_end_date" name="filter_end_date" value="<?php echo htmlspecialchars($filter_end_date); ?>">
+                    <label for="filter_end_date" class="form-label">End Date:</label>
+                    <input type="date" id="filter_end_date" name="filter_end_date" class="form-control-custom" value="<?php echo htmlspecialchars($filter_end_date); ?>">
                 </div>
-                <div class="md:col-span-2 lg:col-span-4 flex items-end justify-end">
-                    <button type="submit" class="btn-primary">Apply Filters</button>
-                    <a href="admin_view_attendance.php" class="btn-secondary ml-2">Clear Filters</a>
+                <div class="md:col-span-2 lg:col-span-4 flex items-center justify-end space-x-4 mt-4">
+                    <button type="submit" class="btn-custom btn-primary">
+                        <i class="fas fa-filter mr-2"></i> Apply Filters
+                    </button>
+                    <a href="admin_view_attendance.php" class="btn-custom btn-secondary">
+                        <i class="fas fa-redo-alt mr-2"></i> Clear Filters
+                    </a>
                 </div>
             </form>
         </div>
 
-        <div class="card">
-            <h2 class="text-2xl font-semibold text-gray-800 mb-4">All Attendance Records</h2>
+        <div class="card card-custom">
+            <h2 class="card-title text-center mb-4 pb-2 border-bottom-title">All Attendance Records</h2>
             <?php if (empty($attendance_records)): ?>
-                <p class="text-gray-600">No attendance records found matching your criteria.</p>
+                <p class="text-center text-gray-600 py-8">No attendance records found matching your criteria.</p>
             <?php else: ?>
                 <div class="table-responsive">
-                    <table>
+                    <table class="table-custom">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -293,7 +268,7 @@ if (isset($_GET['message'])) {
                                 <th>Student Name (Reg No)</th>
                                 <th>Subject (Code)</th>
                                 <th>Status</th>
-                                <th>Actions</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -304,7 +279,7 @@ if (isset($_GET['message'])) {
                                     <td><?php echo htmlspecialchars($record['student_name'] . ' (' . $record['reg_no'] . ')'); ?></td>
                                     <td><?php echo htmlspecialchars($record['subject_name'] . ' (' . $record['subject_code'] . ')'); ?></td>
                                     <td>
-                                        <span class="btn-status-update
+                                        <span class="status-badge
                                             <?php
                                                 if ($record['status'] === 'Present') echo 'status-present';
                                                 elseif ($record['status'] === 'Absent') echo 'status-absent';
@@ -314,35 +289,26 @@ if (isset($_GET['message'])) {
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="flex space-x-2">
+                                        <div class="flex justify-center space-x-2">
                                             <!-- Form to change status to Absent -->
                                             <?php if ($record['status'] !== 'Absent'): ?>
-                                                <form action="admin_view_attendance.php" method="POST" onsubmit="return confirm('Change status to ABSENT?');">
-                                                    <input type="hidden" name="action" value="update_status">
-                                                    <input type="hidden" name="attendance_id" value="<?php echo htmlspecialchars($record['attendance_id']); ?>">
-                                                    <input type="hidden" name="new_status" value="Absent">
-                                                    <button type="submit" class="btn-secondary">Set Absent</button>
-                                                </form>
+                                                <button type="button" class="btn-custom-sm btn-status-absent" onclick="showStatusUpdateModal(<?php echo htmlspecialchars($record['attendance_id']); ?>, 'Absent', 'Change status to ABSENT? This will update the attendance record.');">
+                                                    <i class="fas fa-times-circle mr-1"></i> Absent
+                                                </button>
                                             <?php endif; ?>
 
                                             <!-- Form to change status to Medical -->
                                             <?php if ($record['status'] !== 'Medical'): ?>
-                                                <form action="admin_view_attendance.php" method="POST" onsubmit="return confirm('Change status to MEDICAL? This will increment the student\'s medical count.');">
-                                                    <input type="hidden" name="action" value="update_status">
-                                                    <input type="hidden" name="attendance_id" value="<?php echo htmlspecialchars($record['attendance_id']); ?>">
-                                                    <input type="hidden" name="new_status" value="Medical">
-                                                    <button type="submit" class="btn-secondary">Set Medical</button>
-                                                </form>
+                                                <button type="button" class="btn-custom-sm btn-status-medical" onclick="showStatusUpdateModal(<?php echo htmlspecialchars($record['attendance_id']); ?>, 'Medical', 'Change status to MEDICAL? This will increment the student\'s medical count.');">
+                                                    <i class="fas fa-notes-medical mr-1"></i> Medical
+                                                </button>
                                             <?php endif; ?>
 
                                             <!-- Form to change status to Present -->
                                             <?php if ($record['status'] !== 'Present'): ?>
-                                                <form action="admin_view_attendance.php" method="POST" onsubmit="return confirm('Change status to PRESENT?');">
-                                                    <input type="hidden" name="action" value="update_status">
-                                                    <input type="hidden" name="attendance_id" value="<?php echo htmlspecialchars($record['attendance_id']); ?>">
-                                                    <input type="hidden" name="new_status" value="Present">
-                                                    <button type="submit" class="btn-secondary">Set Present</button>
-                                                </form>
+                                                <button type="button" class="btn-custom-sm btn-status-present" onclick="showStatusUpdateModal(<?php echo htmlspecialchars($record['attendance_id']); ?>, 'Present', 'Change status to PRESENT?');">
+                                                    <i class="fas fa-check-circle mr-1"></i> Present
+                                                </button>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -354,5 +320,640 @@ if (isset($_GET['message'])) {
             <?php endif; ?>
         </div>
     </div>
+
+    <!-- Status Update Confirmation Modal -->
+    <div id="statusUpdateModal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-white p-8 rounded-xl shadow-2xl modal-custom-content transform scale-90 transition-transform duration-300 ease-out">
+            <div class="text-center">
+                <i class="fas fa-question-circle text-blue-500 mb-4" style="font-size: 3rem;"></i>
+                <h3 class="text-2xl font-bold text-gray-800 mb-3">Confirm Status Change</h3>
+                <p id="modalMessage" class="text-gray-600 mb-6"></p>
+                <div class="flex justify-center space-x-4">
+                    <button type="button" class="btn-custom-sm btn-secondary" onclick="hideStatusUpdateModal()">Cancel</button>
+                    <form id="statusUpdateForm" action="admin_view_attendance.php" method="POST" class="inline-block">
+                        <input type="hidden" name="action" value="update_status">
+                        <input type="hidden" name="attendance_id" id="modalAttendanceId">
+                        <input type="hidden" name="new_status" id="modalNewStatus">
+                        <button type="submit" class="btn-custom-sm btn-primary">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to show the status update confirmation modal
+        function showStatusUpdateModal(attendanceId, newStatus, message) {
+            document.getElementById('modalAttendanceId').value = attendanceId;
+            document.getElementById('modalNewStatus').value = newStatus;
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('statusUpdateModal').classList.remove('hidden');
+        }
+
+        // Function to hide the status update confirmation modal
+        function hideStatusUpdateModal() {
+            document.getElementById('statusUpdateModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('statusUpdateModal');
+            if (event.target == modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Improved message display
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageDiv = document.querySelector('.alert');
+            if (messageDiv) {
+                setTimeout(() => {
+                    messageDiv.style.opacity = '0';
+                    messageDiv.style.transition = 'opacity 0.5s ease-out';
+                    setTimeout(() => messageDiv.remove(), 500); // Remove after transition
+                }, 5000); // Hide after 5 seconds
+            }
+        });
+    </script>
 </body>
 </html>
+
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background: linear-gradient(to bottom right, #f8f9fa, #e9ecef); /* Light gray gradient background */
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        color: #343a40; /* Darker text for better contrast */
+        padding-top: 130px; /* Adjusted padding-top to account for two-row header */
+    }
+
+    .container-wrapper {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 2.5rem;
+        flex-grow: 1;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Header Bar */
+    .header-bar {
+        background: linear-gradient(90deg, #1f2937, #374151); /* Dark grey to slightly lighter grey for professional look */
+        color: white;
+        padding: 1rem 3rem; /* Adjusted padding for top/bottom rows */
+        border-bottom-left-radius: 25px; 
+        border-bottom-right-radius: 25px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); 
+        margin-bottom: 0; 
+        display: flex;
+        flex-direction: column; /* Stack children vertically */
+        align-items: center; /* Center items horizontally within the column */
+        position: fixed; 
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000; 
+    }
+
+    .header-top-row {
+        display: flex;
+        justify-content: flex-start; /* Align logo and title to the left */
+        align-items: center;
+        width: 100%; /* Take full width of the header */
+        padding-bottom: 0.5rem; /* Space between top and bottom rows */
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+    }
+
+    .university-logo-header {
+        height: 60px; /* Larger logo */
+        width: auto;
+        margin-right: 1rem; /* Added margin for spacing */
+    }
+
+    .header-bar h1 {
+        font-size: 2.25rem; 
+        font-weight: 800; 
+        letter-spacing: -0.025em; 
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.2); 
+        white-space: nowrap; /* Prevent text wrapping */
+    }
+
+    .header-bottom-row {
+        display: flex;
+        justify-content: space-between; /* Space out nav and user info */
+        align-items: center;
+        width: 100%; /* Take full width */
+        padding-top: 0.5rem; /* Space from top row */
+        flex-wrap: nowrap; /* Ensure elements stay in one line on large screens */
+    }
+
+    .header-nav {
+        display: flex; /* Make nav a flex container itself */
+        flex-grow: 1; /* Allow navigation to take available space */
+        justify-content: flex-start; /* Align navigation links to the left */
+    }
+
+    .header-nav ul {
+        display: flex;
+        list-style: none; /* Remove bullet points */
+        padding: 0;
+        margin: 0;
+        gap: 0.3rem; /* Space between items */
+    }
+
+    .nav-link {
+        padding: 0.7rem 1rem; 
+        color: rgba(255, 255, 255, 0.75); 
+        font-weight: 500;
+        border-radius: 8px; /* Consistent rounded rectangular shape */
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        text-decoration: none;
+        background-color: transparent;
+        border: none;
+        white-space: nowrap; /* Keep links in one line */
+    }
+
+    .nav-link::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 3px; 
+        background: linear-gradient(90deg, #9f7aea, #8b5cf6); /* Purple accent */
+        border-radius: 2px;
+        transform: translateX(-50%);
+        transition: width 0.3s ease-out;
+    }
+
+    .nav-link:hover {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.1); 
+        transform: translateY(-2px);
+    }
+
+    .nav-link:hover::before {
+        width: 100%;
+    }
+
+    .nav-link.current-page,
+    .nav-link.active[aria-current="page"] { 
+        color: #fff;
+        background: linear-gradient(45deg, #a78bfa, #8b5cf6); 
+        box-shadow: 0 3px 10px rgba(139, 92, 246, 0.4);
+        font-weight: 600;
+        transform: translateY(-1px);
+        text-shadow: none; 
+    }
+
+    .nav-link.current-page::before,
+    .nav-link.active[aria-current="page"]::before {
+        width: 0; 
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center; /* Align items vertically in the middle */
+        margin-left: auto; /* Pushes this element to the far right */
+        gap: 0.5rem; /* Gap between Welcome text and Logout button */
+    }
+
+    .header-right span {
+        color: white;
+        font-size: 1.125rem; /* text-lg */
+        font-weight: 600; /* font-semibold */
+        white-space: nowrap; /* Prevent text wrapping */
+    }
+
+    .logout-btn {
+        background-color: transparent;
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 0.7rem 1rem;
+        border-radius: 8px;
+        box-shadow: none;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .logout-btn:hover {
+        transform: translateY(-2px);
+        background-color: rgba(255, 255, 255, 0.1); /* Subtle background on hover */
+        box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2); /* Subtle shadow on hover */
+        text-decoration: none;
+    }
+
+    /* Card Customization */
+    .card-custom {
+        border-radius: 1rem; /* More rounded cards */
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1); /* Softer shadow */
+        transition: all 0.3s ease-in-out;
+        background: #fff;
+    }
+    .card-custom:hover {
+        transform: translateY(-5px); /* Lift effect on hover */
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.15); /* More pronounced shadow on hover */
+    }
+
+    .card-title {
+        font-size: 1.75rem; /* Increased font size for desktop */
+    }
+
+    .border-bottom-title {
+        border-bottom: 2px solid #e9ecef; /* Subtle border for titles */
+        padding-bottom: 1.0rem; /* Increased padding below text */
+        margin-bottom: 2.5rem !important; /* Increased margin below the border line */
+        font-weight: 700;
+        color: #495057;
+    }
+
+    /* Form Control Customization */
+    .form-control-custom {
+        display: block;
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        background-clip: padding-box;
+        border: 1px solid #ced4da;
+        border-radius: 0.5rem; /* Rounded input fields */
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05); /* Inset shadow for depth */
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .form-control-custom:focus {
+        color: #495057;
+        background-color: #f8f9fa; /* Slightly lighter background on focus */
+        border-color: #8a2be2; /* Purple focus border */
+        outline: 0;
+        box-shadow: 0 0 0 0.25rem rgba(138, 43, 226, 0.25); /* Glow effect */
+    }
+    .form-label {
+        display: block;
+        text-align: left; /* Align label text to left */
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Custom Buttons for Form */
+    .btn-custom {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        padding: 0.8rem 1.8rem;
+        border-radius: 0.75rem; /* More rounded buttons */
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        text-decoration: none; /* Ensure no underline on anchor buttons */
+    }
+
+    .btn-custom.btn-primary {
+        background: linear-gradient(45deg, #6a0dad, #8a2be2); /* Purple gradient */
+        border: none;
+        color: white;
+        box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3);
+    }
+    .btn-custom.btn-primary:hover {
+        background: linear-gradient(45deg, #8a2be2, #6a0dad); /* Reverse gradient on hover */
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(138, 43, 226, 0.4);
+    }
+
+    .btn-custom.btn-secondary {
+        background: linear-gradient(45deg, #6c757d, #5a6268); /* Darker gray gradient */
+        border: none;
+        color: white;
+        box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+    }
+    .btn-custom.btn-secondary:hover {
+        background: linear-gradient(45deg, #5a6268, #6c757d);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(108, 117, 125, 0.4);
+    }
+
+    /* Table Customization */
+    .table-responsive {
+        overflow-x: auto;
+        border-radius: 1rem; /* Match card border-radius */
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.05); /* Subtle shadow for table container */
+        background-color: #fff;
+    }
+    .table-custom {
+        width: 100%;
+        text-align: left;
+        border-collapse: separate; /* Allow border-radius on cells */
+        border-spacing: 0;
+        margin-bottom: 0; /* Remove default table margin */
+    }
+
+    .table-custom thead th {
+        background-color: #e9ecef; /* Light gray for table header */
+        color: #495057;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 1.2rem 1rem;
+        border-bottom: 2px solid #dee2e6;
+        vertical-align: middle;
+    }
+
+    .table-custom tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+        color: #495057;
+    }
+
+    .table-custom.table-striped tbody tr:nth-of-type(odd) {
+        background-color: #f8f9fa; /* Lighter stripe */
+    }
+
+    .table-custom.table-hover tbody tr:hover {
+        background-color: #e2f0ff; /* Light blue on hover */
+        transform: translateY(-2px); /* Slight lift */
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05); /* Subtle shadow on hover */
+    }
+
+    /* Table Action Buttons (Edit/Delete) */
+    .btn-custom-sm {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+        padding: 0.5rem 1rem; /* Slightly larger small buttons */
+        border-radius: 0.6rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        text-decoration: none;
+    }
+
+    .btn-edit-custom {
+        background: linear-gradient(45deg, #0d6efd, #0b5ed7); /* Bootstrap primary blue */
+        border: none;
+        color: white;
+    }
+    .btn-edit-custom:hover {
+        background: linear-gradient(45deg, #0b5ed7, #0d6efd);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-delete-custom {
+        background: linear-gradient(45deg, #dc3545, #c82333); /* Bootstrap danger red */
+        border: none;
+        color: white;
+    }
+    .btn-delete-custom:hover {
+        background: linear-gradient(45deg, #c82333, #dc3545);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    /* Custom Modal Styling (using Tailwind/CSS directly) */
+    #deleteConfirmationModal {
+        transition: opacity 0.3s ease-out;
+    }
+    .modal-custom-content {
+        max-width: 500px;
+        width: 90%;
+        animation: modalSlideIn 0.3s ease-out forwards;
+    }
+
+    @keyframes modalSlideIn {
+        from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Message Alert Styling */
+    .alert {
+        padding: 1rem 1.5rem;
+        border-radius: 0.75rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        text-align: center;
+    }
+    .alert.alert-success {
+        background-color: #d1fae5; /* Green-100 */
+        border-color: #34d399; /* Green-400 */
+        color: #065f46; /* Green-700 */
+    }
+    .alert.alert-danger {
+        background-color: #fee2e2; /* Red-100 */
+        border-color: #ef4444; /* Red-400 */
+        color: #991b1b; /* Red-700 */
+    }
+    .alert.alert-warning {
+        background-color: #fffbeb; /* Yellow-100 */
+        border-color: #fbbf24; /* Yellow-400 */
+        color: #92400e; /* Yellow-700 */
+    }
+
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4em 0.8em;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        font-size: 0.85em;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border: 1px solid transparent;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .status-present {
+        background-color: #d4edda; /* Light green */
+        color: #155724; /* Dark green */
+        border-color: #28a745;
+    }
+
+    .status-absent {
+        background-color: #f8d7da; /* Light red */
+        color: #721c24; /* Dark red */
+        border-color: #dc3545;
+    }
+
+    .status-medical {
+        background-color: #ffeeba; /* Light yellow */
+        color: #856404; /* Dark yellow */
+        border-color: #ffc107;
+    }
+
+    /* Specific Status Action Buttons */
+    .btn-status-absent {
+        background: linear-gradient(45deg, #dc3545, #c82333);
+        color: white;
+    }
+    .btn-status-absent:hover {
+        background: linear-gradient(45deg, #c82333, #dc3545);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-status-medical {
+        background: linear-gradient(45deg, #ffc107, #e0a800);
+        color: white;
+    }
+    .btn-status-medical:hover {
+        background: linear-gradient(45deg, #e0a800, #ffc107);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(255, 193, 7, 0.3);
+    }
+
+    .btn-status-present {
+        background: linear-gradient(45deg, #28a745, #218838);
+        color: white;
+    }
+    .btn-status-present:hover {
+        background: linear-gradient(45deg, #218838, #28a745);
+        transform: translateY(-1px);
+        box-shadow: 0 3px 8px rgba(40, 167, 69, 0.3);
+    }
+
+
+    /* Responsive Adjustments */
+    @media (max-width: 992px) { /* Adjust breakpoint for collapsing navigation */
+        body {
+            padding-top: 150px; /* Adjusted padding-top for smaller screens with two rows */
+        }
+        .header-bar {
+            padding: 0.8rem 1rem; /* Reduced padding */
+        }
+        .header-top-row {
+            padding-bottom: 0.2rem;
+            flex-direction: column; /* Stack logo and title */
+            text-align: center;
+        }
+        .header-left {
+            flex-direction: column;
+            margin-bottom: 0.5rem;
+        }
+        .university-logo-header {
+            height: 45px;
+            margin-right: 0;
+            margin-bottom: 0.5rem;
+        }
+        .header-bar h1 {
+            font-size: 1.8rem;
+        }
+        .header-bottom-row {
+            flex-direction: column; /* Stack nav and user info vertically */
+            align-items: center;
+            padding-top: 0.2rem;
+            flex-wrap: wrap; /* Allow elements to wrap on smaller screens */
+        }
+        .header-nav {
+            width: 100%;
+            justify-content: center; /* Center nav links when stacked */
+            margin-bottom: 0.5rem;
+        }
+        .header-nav ul {
+            flex-direction: column; /* Stack nav items */
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+        .nav-link {
+            width: 90%; /* Make nav links wider */
+            text-align: center;
+            padding: 0.6rem 0.8rem;
+        }
+        .header-right {
+            flex-direction: column; /* Stack welcome and logout */
+            gap: 0.5rem;
+            width: 100%;
+            text-align: center;
+        }
+        .logout-btn {
+            width: 90%; /* Make logout button wider */
+            padding: 0.5rem 0; /* Adjust padding for plain text button */
+        }
+        .header-right span {
+            font-size: 1rem;
+        }
+
+        .container-wrapper {
+            padding: 1.5rem;
+        }
+        .card-body {
+            padding: 1.5rem !important;
+        }
+        .card-title {
+            font-size: 1.5rem; /* Adjusted for smaller screens */
+        }
+        .form-control-custom {
+            padding: 0.6rem 0.8rem;
+            font-size: 0.9rem;
+        }
+        .form-label {
+            font-size: 0.9rem;
+        }
+        .btn-custom {
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
+        .table-custom thead th, .table-custom tbody td {
+            padding: 0.8rem 0.6rem;
+            font-size: 0.8rem;
+        }
+        .table-custom tbody td .btn-sm {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+        .modal-content {
+            padding: 1.5rem;
+        }
+        .modal-title {
+            font-size: 1.2rem;
+        }
+        .modal-body p {
+            font-size: 0.9rem;
+        }
+        .btn-custom-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        body {
+            padding-top: 140px; /* Further adjust padding for very small screens */
+        }
+        .header-bar {
+            padding: 0.5rem 0.8rem;
+        }
+        .university-logo-header {
+            height: 30px; /* Even smaller logo */
+        }
+        .header-bar h1 {
+            font-size: 1rem; /* Smaller title */
+        }
+        .table-custom tbody td .flex.space-x-2 {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
