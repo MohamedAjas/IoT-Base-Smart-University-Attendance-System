@@ -1,0 +1,7 @@
+Student_ID,Name,Math_Attended,Physics_Attended,Chemistry_Attended,Biology_Attended,CS_Attended
+S001,Alice,36,34,38,35,37
+S002,Bob,30,28,32,29,31
+S003,Charlie,25,20,22,18,19
+S004,David,38,36,39,37,40
+S005,Eve,33,31,30,32,34
+Total_Classes,Total,40,40,40,40,40

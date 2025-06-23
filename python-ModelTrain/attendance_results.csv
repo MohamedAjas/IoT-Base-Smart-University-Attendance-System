@@ -1,0 +1,6 @@
+Student_ID,Name,Math_Attended,Physics_Attended,Chemistry_Attended,Biology_Attended,CS_Attended,Math_Percentage,Physics_Percentage,Chemistry_Percentage,Biology_Percentage,CS_Percentage,Average_Percentage,Eligibility
+S001,Alice,36,34,38,35,37,90.0,85.0,95.0,87.5,92.5,90.0,Eligible
+S002,Bob,30,28,32,29,31,75.0,70.0,80.0,72.5,77.5,75.0,Eligible
+S003,Charlie,25,20,22,18,19,62.5,50.0,55.00000000000001,45.0,47.5,52.0,Not Eligible
+S004,David,38,36,39,37,40,95.0,90.0,97.5,92.5,100.0,95.0,Eligible
+S005,Eve,33,31,30,32,34,82.5,77.5,75.0,80.0,85.0,80.0,Eligible
